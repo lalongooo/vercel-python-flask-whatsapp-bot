@@ -3,14 +3,13 @@ from flask import request
 from flask import Response
 from flask import make_response
 import requests
-import uuid
-import os
 import json
 from utils.util import Util
 from utils.constants import (
     GRAPH_FACEBOOK_WHATSAPP_MESSAGES_URL,
     HEADERS,
-    WHATSAPP_API_TEMP_ACCESS_TOKEN,
+    INTERACTIVE_BOILERPLATE_INITIAL,
+    TEXT_MESSAGE_TEMPLATE,
 )
 
 app = Flask(__name__)
@@ -53,74 +52,44 @@ def handle_interactive_list_reply(request):
         return reply_with_interactive_message(request)
 
 def reply_with_interactive_message(request):
-    url = GRAPH_FACEBOOK_WHATSAPP_MESSAGES_URL
-    to_author = Util.get_author(request)
-    payload = json.dumps({
-        "messaging_product": "whatsapp",
-        "to": to_author,
-        "type": "interactive",
-        "recipient_type": "individual",
-        "interactive": {
-            "type": "list",
-            "header": {
-                "type": "text",
-                "text": "¡Hola! Muchas gracias por ponerte en contacto con nosotros."
-            },
-            "body": {
-                "text": "Estamos encantados de ayudarte."
-            },
-            "action": {
-                "button": "Elige una opción",
-                "sections":
-                [
-                    {
-                        "rows":
-                        [
-                            {
-                                "id": "1",
-                                "title": "Contratar servicio",
-                                "description": "Conoce los detalles para contratar internet en tu domicilio"
-                            },
-                            {
-                                "id": "2",
-                                "title": "Reportar una falla",
-                                "description": "Lamentamos que esto haya sucedido. Selecciona para levantar un reporte"
-                            },
-                            {
-                                "id": "3",
-                                "title": "Precios de paquetes",
-                                "description": "Información relacionada a precios de paquetes de internet en tu casa"
-                            }
-                        ]
-                    }
-                ]
-            }
-        }
-    })
-
-    response = requests.request("POST", url, headers=HEADERS, data=payload)
+    interactive_reply_content = INTERACTIVE_BOILERPLATE_INITIAL.copy()
+    interactive_reply_content["to"] = Util.get_author(request)
+    response = requests.post(
+        url = GRAPH_FACEBOOK_WHATSAPP_MESSAGES_URL,
+        headers = HEADERS,
+        data = json.dumps(interactive_reply_content)
+    )
 
     response_json = response.json()
     print(response_json)
-
     response = make_response(response_json)
     response.status_code = 200
     return response
 
 def reply(request, reply_message):
-    url = GRAPH_FACEBOOK_WHATSAPP_MESSAGES_URL
-    to_author = Util.get_author(request)
-    payload = json.dumps({
-        "messaging_product": "whatsapp",
-        "to": to_author,
-        "text": {
-            "body": reply_message
-        }
-    })
-
-    response = requests.request("POST", url, headers=HEADERS, data=payload)
+    text_message = TEXT_MESSAGE_TEMPLATE.copy()
+    text_message["to"] = Util.get_author(request)
+    text_message["text"]["body"] = reply_message
+    text_message_payload = json.dumps(text_message)
+    
+    print("WhatsApp Request payload: 🟢")
+    print(text_message_payload)
+    print("WhatsApp Request payload: 🔴")
+    
+    response = requests.post(
+        url = GRAPH_FACEBOOK_WHATSAPP_MESSAGES_URL,
+        headers = HEADERS,
+        data = text_message_payload
+    )
     response_json = response.json()
+
+    print("WhatsApp Response payload: 🟢")
     print(response_json)
-    response = make_response(response_json)
+    print("WhatsApp Response payload: 🔴")
+
+    return make_bot_response_200(response_json)
+
+def make_bot_response_200(content):
+    response = make_response(content)
     response.status_code = 200
     return response
