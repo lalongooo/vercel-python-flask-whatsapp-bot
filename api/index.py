@@ -15,6 +15,10 @@ from utils.constants import (
 
 app = Flask(__name__)
 
+@app.route('/')
+def home():
+    return 'WhatsApp Bot Service is operating normally ✅'
+
 @app.route('/whatsapp', methods=['GET', 'POST'])
 def whatsapp():
     if request.args.get("hub.challenge"):
