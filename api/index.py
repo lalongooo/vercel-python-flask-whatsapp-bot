@@ -24,20 +24,15 @@ def whatsapp():
     if request.args.get("hub.challenge"):
         return request.args.get("hub.challenge")
     else:
-        json_data = json.loads(request.data)
-        print("Message Data Received:")
-
         data_decoded = request.data.decode('utf-8')
-        print("request.data.decode('utf-8')")
-        print(type(data_decoded))
+        print("Request payload: 👇🏼")
         print(data_decoded)
+        print("Request payload: 👆🏼")
 
         if Util.is_message(request):
             if Util.is_interactive_list_reply(request):
-                print("it is interactive reply")
                 return handle_interactive_list_reply(request)
             else:
-                print("it is NOT interactive reply")
                 return reply_with_interactive_message(request)
         else:
             print("it is not a valid message")
